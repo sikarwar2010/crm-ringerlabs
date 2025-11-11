@@ -27,15 +27,7 @@ import {
 import { SignOutButton, useUser } from "@clerk/nextjs";
 import { useUserSync } from "@/hooks/use-user-sync";
 
-export function NavUser({
-  user,
-}: {
-  user: {
-    name: string;
-    email: string;
-    avatar: string;
-  };
-}) {
+export function NavUser() {
   const { isMobile } = useSidebar();
   const { user: clerkUser } = useUser();
   const { user: currentUser } = useUserSync();
@@ -122,7 +114,7 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuItem>
               <IconLogout />
-              <SignOutButton/>
+              <SignOutButton />
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

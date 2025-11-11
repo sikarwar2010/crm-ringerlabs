@@ -5,6 +5,7 @@ import ConvexClientProvider from "@/components/providers/ConvexClientProvider";
 import { UserSyncProvider } from "@/components/providers/user-sync-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ClerkProvider } from "@clerk/nextjs";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,7 +40,10 @@ export default function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
-              <UserSyncProvider>{children}</UserSyncProvider>
+              <UserSyncProvider>
+                {children}
+                <Toaster richColors position="top-center" />
+              </UserSyncProvider>
             </ThemeProvider>
           </ConvexClientProvider>
         </body>

@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as contacts from "../contacts.js";
 import type * as permissions from "../permissions.js";
 import type * as users from "../users.js";
 
@@ -26,6 +27,7 @@ import type {
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  contacts: typeof contacts;
   permissions: typeof permissions;
   users: typeof users;
 }>;
