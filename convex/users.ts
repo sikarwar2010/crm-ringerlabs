@@ -1,17 +1,16 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { ConvexError } from "convex/values";
+import { type UserRole } from "../lib/permissions";
 
-// User roles with hierarchical permissions
-export const USER_ROLES = {
-  OWNER: "owner", // Full access to everything
-  ADMIN: "admin", // Full access except billing/ownership
-  MANAGER: "manager", // Can manage team members and view all data
-  SALES: "sales", // Can manage own contacts/deals + view team data
-  VIEWER: "viewer", // Read-only access
+// User roles
+const USER_ROLES = {
+  OWNER: "owner",
+  ADMIN: "admin",
+  MANAGER: "manager",
+  SALES: "sales",
+  VIEWER: "viewer",
 } as const;
-
-export type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES];
 
 // Role permissions matrix
 export const ROLE_PERMISSIONS = {

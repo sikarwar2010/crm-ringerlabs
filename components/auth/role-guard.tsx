@@ -4,7 +4,7 @@ import React from "react";
 import { useQuery } from "convex/react";
 import { useUser } from "@clerk/nextjs";
 import { api } from "../../convex/_generated/api";
-import { ROLE_PERMISSIONS, type UserRole } from "../../convex/users";
+import { ROLE_PERMISSIONS, type UserRole } from "@/lib/permissions";
 import type { ReactNode } from "react";
 
 interface RoleGuardProps {
