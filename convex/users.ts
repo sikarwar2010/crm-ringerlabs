@@ -119,6 +119,17 @@ export const getUser = query({
   },
 });
 
+export const getUsers = query({
+  args: { limit: v.optional(v.number()), clerkId: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const q = ctx.db.query("users");
+
+    const users = await q.order("desc").collect();
+    const limit = args.limit || 50;
+    return users.slice(0, limit);
+  },
+});
+
 // update user role(admin/owner only)
 export const updateUserRole = mutation({
   args: {

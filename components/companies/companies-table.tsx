@@ -289,7 +289,7 @@ export function CompaniesTable({
         },
       },
     ],
-    [onCompanySelect, deleteCompany],
+    [onCompanySelect, deleteCompany, handleDeleteCompany],
   );
 
   const table = useReactTable({

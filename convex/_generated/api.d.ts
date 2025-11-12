@@ -10,7 +10,9 @@
 
 import type * as companies from "../companies.js";
 import type * as contacts from "../contacts.js";
+import type * as deals from "../deals.js";
 import type * as permissions from "../permissions.js";
+import type * as tasks from "../tasks.js";
 import type * as users from "../users.js";
 
 import type {
@@ -30,7 +32,9 @@ import type {
 declare const fullApi: ApiFromModules<{
   companies: typeof companies;
   contacts: typeof contacts;
+  deals: typeof deals;
   permissions: typeof permissions;
+  tasks: typeof tasks;
   users: typeof users;
 }>;
 declare const fullApiWithMounts: typeof fullApi;
