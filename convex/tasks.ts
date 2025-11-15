@@ -1,5 +1,43 @@
-import { query, mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
+import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { v } from "convex/values";
+import type { Doc, Id } from "./_generated/dataModel";
+
+const RELATED_ENTITY_TABLES = {
+  contact: "contacts",
+  company: "companies",
+  deal: "deals",
+} as const;
+
+type RelatedToValue = keyof typeof RELATED_ENTITY_TABLES;
+type RelatedEntityDoc =
+  | Doc<"contacts">
+  | Doc<"companies">
+  | Doc<"deals">;
+
+const isRelatedToValue = (value: string): value is RelatedToValue =>
+  value === "contact" || value === "company" || value === "deal";
+
+const getRelatedEntity = async (
+  ctx: QueryCtx | MutationCtx,
+  relatedTo?: string,
+  relatedId?: string,
+): Promise<RelatedEntityDoc | null> => {
+  if (!relatedTo || !relatedId || !isRelatedToValue(relatedTo)) {
+    return null;
+  }
+
+  switch (RELATED_ENTITY_TABLES[relatedTo]) {
+    case "contacts":
+      return ctx.db.get(relatedId as Id<"contacts">);
+    case "companies":
+      return ctx.db.get(relatedId as Id<"companies">);
+    case "deals":
+      return ctx.db.get(relatedId as Id<"deals">);
+    default:
+      return null;
+  }
+};
 
 // Get all tasks
 export const getTasks = query({
@@ -15,27 +53,31 @@ export const getTasks = query({
     offset: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    let query = ctx.db.query("tasks");
+    let tasksQuery = ctx.db.query("tasks");
 
     // Apply filters
     if (args.status) {
-      query = query.filter((q) => q.eq(q.field("status"), args.status));
-    }
-    if (args.priority) {
-      query = query.filter((q) => q.eq(q.field("priority"), args.priority));
-    }
-    if (args.assignedTo) {
-      query = query.filter((q) => q.eq(q.field("assignedTo"), args.assignedTo));
-    }
-    if (args.relatedTo && args.relatedId) {
-      query = query.filter(
-        (q) =>
-          q.eq(q.field("relatedTo"), args.relatedTo) &&
-          q.eq(q.field("relatedId"), args.relatedId),
+      tasksQuery = tasksQuery.filter((q) =>
+        q.eq(q.field("status"), args.status),
       );
     }
+    if (args.priority) {
+      tasksQuery = tasksQuery.filter((q) =>
+        q.eq(q.field("priority"), args.priority),
+      );
+    }
+    if (args.assignedTo) {
+      tasksQuery = tasksQuery.filter((q) =>
+        q.eq(q.field("assignedTo"), args.assignedTo),
+      );
+    }
+    if (args.relatedTo && args.relatedId) {
+      tasksQuery = tasksQuery
+        .filter((q) => q.eq(q.field("relatedTo"), args.relatedTo))
+        .filter((q) => q.eq(q.field("relatedId"), args.relatedId));
+    }
 
-    let tasks = await query.order("desc").collect();
+    let tasks = await tasksQuery.order("desc").collect();
 
     // Apply search filter
     if (args.search) {
@@ -59,20 +101,11 @@ export const getTasks = query({
     // Enrich with related entity data
     const enrichedTasks = await Promise.all(
       tasks.map(async (task) => {
-        let relatedEntity = null;
-        if (task.relatedTo && task.relatedId) {
-          switch (task.relatedTo) {
-            case "contact":
-              relatedEntity = await ctx.db.get(task.relatedId as any);
-              break;
-            case "company":
-              relatedEntity = await ctx.db.get(task.relatedId as any);
-              break;
-            case "deal":
-              relatedEntity = await ctx.db.get(task.relatedId as any);
-              break;
-          }
-        }
+        const relatedEntity = await getRelatedEntity(
+          ctx,
+          task.relatedTo,
+          task.relatedId,
+        );
 
         return {
           ...task,
@@ -120,18 +153,15 @@ export const createTask = mutation({
   handler: async (ctx, args) => {
     // Validate related entity exists
     if (args.relatedTo && args.relatedId) {
-      let relatedEntity = null;
-      switch (args.relatedTo) {
-        case "contact":
-          relatedEntity = await ctx.db.get(args.relatedId as any);
-          break;
-        case "company":
-          relatedEntity = await ctx.db.get(args.relatedId as any);
-          break;
-        case "deal":
-          relatedEntity = await ctx.db.get(args.relatedId as any);
-          break;
+      if (!isRelatedToValue(args.relatedTo)) {
+        throw new Error(`Unsupported related type: ${args.relatedTo}`);
       }
+
+      const relatedEntity = await getRelatedEntity(
+        ctx,
+        args.relatedTo,
+        args.relatedId,
+      );
 
       if (!relatedEntity) {
         throw new Error(`Related ${args.relatedTo} not found`);
@@ -176,7 +206,11 @@ export const updateTaskStatus = mutation({
     }
 
     const now = Date.now();
-    const updates: any = {
+    const updates: {
+      status: string;
+      updatedAt: number;
+      completedAt?: number;
+    } = {
       status: args.status,
       updatedAt: now,
     };
@@ -323,7 +357,7 @@ export const generateAITaskSuggestions = query({
 
     // Deal-specific suggestions
     if (args.relatedTo === "deal") {
-      const deal = await ctx.db.get(args.relatedId as any);
+      const deal = await ctx.db.get(args.relatedId as Id<"deals">);
       if (deal && deal.stage === "proposal") {
         suggestions.push({
           subject: "Follow up on proposal",
@@ -342,13 +376,15 @@ export const generateAITaskSuggestions = query({
 export const getTasksSummary = query({
   args: { userId: v.optional(v.string()) },
   handler: async (ctx, args) => {
-    let query = ctx.db.query("tasks");
+    let tasksQuery = ctx.db.query("tasks");
 
     if (args.userId) {
-      query = query.filter((q) => q.eq(q.field("assignedTo"), args.userId));
+      tasksQuery = tasksQuery.filter((q) =>
+        q.eq(q.field("assignedTo"), args.userId),
+      );
     }
 
-    const tasks = await query.collect();
+    const tasks = await tasksQuery.collect();
     const now = Date.now();
 
     const summary = {

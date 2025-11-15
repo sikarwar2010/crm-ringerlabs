@@ -96,10 +96,17 @@ export function TaskList({
   const handleStatusUpdate = useCallback(
     async (taskId: string, newStatus: string) => {
       try {
-        await updateTaskStatus({ id: taskId as Id<"tasks">, status: newStatus });
+        await updateTaskStatus({
+          id: taskId as Id<"tasks">,
+          status: newStatus,
+        });
         toast("Task status updated successfully.");
       } catch (error) {
-        toast("Failed to update task status.");
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Failed to update task status.";
+        toast.error(message);
       }
     },
     [toast, updateTaskStatus],
@@ -111,7 +118,9 @@ export function TaskList({
         await deleteTask({ id: taskId as Id<"tasks"> });
         toast("Task deleted successfully.");
       } catch (error) {
-        toast("Failed to delete task.");
+        const message =
+          error instanceof Error ? error.message : "Failed to delete task.";
+        toast.error(message);
       }
     },
     [deleteTask, toast],
@@ -185,12 +194,13 @@ export function TaskList({
           return (
             <Badge
               variant="secondary"
-              className={`${priority === "high"
+              className={`${
+                priority === "high"
                   ? "bg-red-500/10 text-red-500 border-red-500/20"
                   : priority === "medium"
                     ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
                     : "bg-gray-500/10 text-gray-500 border-gray-500/20"
-                }`}
+              }`}
             >
               {priority}
             </Badge>
@@ -205,14 +215,15 @@ export function TaskList({
           return (
             <Badge
               variant="secondary"
-              className={`${status === "completed"
+              className={`${
+                status === "completed"
                   ? "bg-green-500/10 text-green-500 border-green-500/20"
                   : status === "in-progress"
                     ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
                     : status === "not-started"
                       ? "bg-gray-500/10 text-gray-500 border-gray-500/20"
                       : "bg-red-500/10 text-red-500 border-red-500/20"
-                }`}
+              }`}
             >
               {status === "not-started"
                 ? "Not Started"
@@ -360,9 +371,9 @@ export function TaskList({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
                     </TableHead>
                   ))}
                 </TableRow>
@@ -412,7 +423,7 @@ export function TaskList({
           to{" "}
           {Math.min(
             (table.getState().pagination.pageIndex + 1) *
-            table.getState().pagination.pageSize,
+              table.getState().pagination.pageSize,
             table.getFilteredRowModel().rows.length,
           )}{" "}
           of {table.getFilteredRowModel().rows.length} tasks
